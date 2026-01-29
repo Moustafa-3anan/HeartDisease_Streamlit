@@ -1,59 +1,49 @@
-#import streamlit as st
-#import numpy as np
-#from sklearn.preprocessing import StandardScaler
-#import joblib
-#import pandas as pd
-
-import joblib
 import streamlit as st
+import numpy as np
+from sklearn.preprocessing import StandardScaler
+import joblib
 import pandas as pd
 
-# Load model pipeline (includes scaler & encoders)
-model_pipeline = joblib.load("heart_rf_model_streamlit.pkl")  # pipeline شامل preprocessing
+# Load saved model and scaler
+model = joblib.load("heart_rf_model_streamlit.pkl")
+scaler = joblib.load("heart_scaler.pkl")
 
 st.title("❤️ Heart Disease Prediction App")
+st.write("🏥 Enter patient medical details to predict heart disease risk")
 
 # Input fields
-age = st.number_input("Age", 1, 120, 40)
+age = st.number_input("Age", min_value=1, max_value=120, value=40)
 sex = st.selectbox("Sex (1=Male, 0=Female)", [0,1], index=1)
-cp = st.selectbox("Chest Pain Type", ["typical angina","atypical angina","non-anginal","asymptomatic"])
-trestbps = st.number_input("Resting BP", 80, 200, 120)
-chol = st.number_input("Cholesterol", 100, 600, 200)
-fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0,1])
-restecg = st.selectbox("Rest ECG", ["normal","ST-T abnormality","left ventricular hypertrophy"])
-thalach = st.number_input("Max Heart Rate", 60, 250, 150)
-exang = st.selectbox("Exercise Induced Angina", [0,1])
-oldpeak = st.number_input("ST Depression", 0.0, 10.0, 0.0, 0.1)
-slope = st.selectbox("Slope", ["upsloping","flat","downsloping"])
-ca = st.number_input("Number of Vessels", 0, 3, 0)
-thal = st.selectbox("Thal", ["normal","fixed defect","reversable defect"])
-dataset = st.selectbox("Dataset", ["Hungary","Switzerland","Cleveland","Long Beach VA"])
+cp = st.number_input("Chest Pain Type (0-3)", min_value=0, max_value=3, value=0)
+trestbps = st.number_input("Resting BP", min_value=80, max_value=200, value=120)
+chol = st.number_input("Cholesterol", min_value=100, max_value=600, value=200)
+fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0,1], index=0)
+restecg = st.number_input("Rest ECG (0-2)", min_value=0, max_value=2, value=0)
+thalach = st.number_input("Max Heart Rate", min_value=60, max_value=250, value=150)
+exang = st.selectbox("Exercise Induced Angina", [0,1], index=0)
+oldpeak = st.number_input("ST Depression", min_value=0.0, max_value=10.0, value=0.0, step=0.1)
+slope = st.number_input("Slope (0-2)", min_value=0, max_value=2, value=1)
+ca = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=0)
+thal = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
 
-# Convert to DataFrame
-input_data = pd.DataFrame([{
-    "age": age,
-    "sex": sex,
-    "cp": cp,
-    "trestbps": trestbps,
-    "chol": chol,
-    "fbs": fbs,
-    "restecg": restecg,
-    "thalach": thalach,
-    "exang": exang,
-    "oldpeak": oldpeak,
-    "slope": slope,
-    "ca": ca,
-    "thal": thal,
-    "dataset": dataset
-}])
+# **Important**: Feature names and order must match training
+feature_order = ['age','sex','cp','trestbps','chol','fbs','restecg',
+                 'thalach','exang','oldpeak','slope','ca','thal']
 
-if st.button("Predict Heart Disease"):
+input_values = [age, sex, cp, trestbps, chol, fbs, restecg,
+                thalach, exang, oldpeak, slope, ca, thal]
+
+input_df = pd.DataFrame([input_values], columns=feature_order)
+
+if st.button("🔮 Predict Heart Disease"):
     try:
-        prediction = model_pipeline.predict(input_data)[0]
-        prob = model_pipeline.predict_proba(input_data)[0][1]*100
-        if prediction==1:
-            st.error(f"💔 High Risk ({prob:.2f}%)")
+        input_scaled = scaler.transform(input_df)  # scale input
+        prediction = model.predict(input_scaled)[0]
+        prob = model.predict_proba(input_scaled)[0][1] * 100
+
+        if prediction == 1:
+            st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
         else:
-            st.success(f"❤️ Low Risk ({prob:.2f}%)")
+            st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
     except Exception as e:
         st.error(f"Error: {e}")
