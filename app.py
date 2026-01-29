@@ -5,7 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 # Load saved Random Forest model and scaler
-model = joblib.load("heart_rf_model.pkl")
+model = joblib.load("heart_rf_model_streamlit.pkl")
 scaler = joblib.load("heart_scaler.pkl")
 
 st.set_page_config(page_title="Heart Disease Risk Predictor", page_icon="❤️")
