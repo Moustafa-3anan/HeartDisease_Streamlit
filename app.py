@@ -1,80 +1,60 @@
 import streamlit as st
-import joblib
-import pandas as pd
+import pickle
 import numpy as np
 
-# -----------------------------
-# 1️⃣ Load models
-# -----------------------------
-rf_model = joblib.load("heart_rf_model.pkl")
-xgb_model = joblib.load("heart_xgb_model.pkl")
-scaler = joblib.load("heart_scaler.pkl")
+# ----------------------------
+# Load saved RandomForest model, scaler, and features
+# ----------------------------
+with open("heart_rf_model.pkl", "rb") as file:
+    saved_data = pickle.load(file)
+    model = saved_data["model"]      # RandomForest model
+    scaler = saved_data["scaler"]    # StandardScaler
+    features = saved_data["features"]  # Feature names
 
-# -----------------------------
-# 2️⃣ Streamlit Interface
-# -----------------------------
-st.title("Heart Disease Prediction App ❤️")
-st.markdown("Enter patient data to predict the risk of heart disease (all inputs are numeric).")
+# ----------------------------
+# Streamlit App UI
+# ----------------------------
+st.title("🫀Heart Disease Prediction App")
+st.write("🏥 Enter patient medical details to predict heart disease risk")
 
-# --- Inputs ---
-age = st.number_input("Age", min_value=1, max_value=120, value=50)
-sex = st.number_input("Sex (Male=1 / Female=0)", min_value=0, max_value=1, value=1)
-cp = st.number_input("Chest pain type (0-3)", min_value=0, max_value=3, value=1)
-trestbps = st.number_input("Resting blood pressure (mm Hg)", min_value=50, max_value=250, value=120)
-chol = st.number_input("Cholesterol (mg/dl)", min_value=100, max_value=600, value=200)
-fbs = st.number_input("Fasting blood sugar > 120 (0/1)", min_value=0, max_value=1, value=0)
-restecg = st.number_input("Rest ECG (0-2)", min_value=0, max_value=2, value=0)
-thalach = st.number_input("Max heart rate achieved", min_value=50, max_value=250, value=150)
-exang = st.number_input("Exercise induced angina (0/1)", min_value=0, max_value=1, value=0)
-oldpeak = st.number_input("ST depression (oldpeak)", min_value=0.0, max_value=10.0, value=1.0, step=0.1)
-slope = st.number_input("Slope of ST segment (0-2)", min_value=0, max_value=2, value=1)
-ca = st.number_input("Number of major vessels colored (0-3)", min_value=0, max_value=3, value=0)
-thal = st.number_input("Thal (0=normal, 1=fixed defect, 2=reversible defect)", min_value=0, max_value=2, value=0)
+# Input fields dictionary
+input_data = {}
+input_data['age'] = st.number_input("Age", min_value=1, max_value=120, value=40)
+input_data['sex'] = st.selectbox("Sex (1=Male, 0=Female)", [0,1], index=1)
+input_data['cp'] = st.number_input("Chest Pain Type (0-3)", min_value=0, max_value=3, value=0)
+input_data['trestbps'] = st.number_input("Resting BP", min_value=80, max_value=200, value=120)
+input_data['chol'] = st.number_input("Cholesterol", min_value=100, max_value=600, value=200)
+input_data['fbs'] = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0,1], index=0)
+input_data['restecg'] = st.number_input("Rest ECG (0-2)", min_value=0, max_value=2, value=0)
+input_data['thalach'] = st.number_input("Max Heart Rate", min_value=60, max_value=250, value=150)
+input_data['exang'] = st.selectbox("Exercise Induced Angina", [0,1], index=0)
+input_data['oldpeak'] = st.number_input("ST Depression", min_value=0.0, max_value=10.0, value=0.0, step=0.1)
+input_data['slope'] = st.number_input("Slope (0-2)", min_value=0, max_value=2, value=1)
+input_data['ca'] = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=0)
+input_data['thal'] = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
 
-# -----------------------------
-# 3️⃣ Prepare data
-# -----------------------------
-user_df = pd.DataFrame([{
-    "age": age,
-    "sex": sex,
-    "cp": cp,
-    "trestbps": trestbps,
-    "chol": chol,
-    "fbs": fbs,
-    "restecg": restecg,
-    "thalach": thalach,
-    "exang": exang,
-    "oldpeak": oldpeak,
-    "slope": slope,
-    "ca": ca,
-    "thal": thal
-}])
+# ----------------------------
+# Prediction Button
+# ----------------------------
+if st.button("🔮 Predict Heart Disease"):
 
-# Scale inputs
-user_scaled = scaler.transform(user_df)
+    # Arrange input in same order as features
+    input_array = np.array([[input_data[feat] for feat in features]])
 
-# -----------------------------
-# 4️⃣ Prediction (Risk-based)
-# -----------------------------
-def get_risk_label(prob):
-    if prob < 0.4:
-        return "Low risk"
-    elif prob < 0.7:
-        return "Medium risk"
+    # Scale input
+    input_scaled = scaler.transform(input_array)
+
+    # Prediction
+    prediction = model.predict(input_scaled)[0]
+
+    # Probability / Risk
+    if hasattr(model, "predict_proba"):
+        prob = model.predict_proba(input_scaled)[0][1] * 100  # Classifier probability
     else:
-        return "High risk"
+        prob = prediction * 100  # Regressor output (continuous risk score)
 
-rf_prob = rf_model.predict_proba(user_scaled)[0][1]
-rf_label = get_risk_label(rf_prob)
-
-xgb_prob = xgb_model.predict_proba(user_scaled)[0][1]
-xgb_label = get_risk_label(xgb_prob)
-
-# -----------------------------
-# 5️⃣ Display results
-# -----------------------------
-st.subheader("Random Forest Prediction")
-st.write(f"Risk: {rf_label} ({rf_prob * 100:.2f}%)")
-
-st.subheader("XGBoost Prediction")
-st.write(f"Risk: {xgb_label} ({xgb_prob * 100:.2f}%)")
+    # Display Result
+    if prediction == 1:
+        st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
+    else:
+        st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
