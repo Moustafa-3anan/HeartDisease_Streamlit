@@ -1,6 +1,10 @@
+#import streamlit as st
+#import numpy as np
+#from sklearn.preprocessing import StandardScaler
+#import joblib
+#import pandas as pd
+
 import streamlit as st
-import numpy as np
-from sklearn.preprocessing import StandardScaler
 import joblib
 import pandas as pd
 
@@ -26,39 +30,25 @@ slope = st.number_input("Slope (0-2)", min_value=0, max_value=2, value=1)
 ca = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=0)
 thal = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
 
-# Feature names used during training
-feature_names = ['age','sex','cp','trestbps','chol','fbs','restecg',
+# **Important**: Feature names and order must match training
+feature_order = ['age','sex','cp','trestbps','chol','fbs','restecg',
                  'thalach','exang','oldpeak','slope','ca','thal']
 
+input_values = [age, sex, cp, trestbps, chol, fbs, restecg,
+                thalach, exang, oldpeak, slope, ca, thal]
+
+input_df = pd.DataFrame([input_values], columns=feature_order)
+
 if st.button("🔮 Predict Heart Disease"):
-    # تحويل القيم لـ DataFrame بنفس ترتيب الـ features
-    input_dict = {
-        'age': age,
-        'sex': sex,
-        'cp': cp,
-        'trestbps': trestbps,
-        'chol': chol,
-        'fbs': fbs,
-        'restecg': restecg,
-        'thalach': thalach,
-        'exang': exang,
-        'oldpeak': oldpeak,
-        'slope': slope,
-        'ca': ca,
-        'thal': thal
-    }
-    input_df = pd.DataFrame([input_dict], columns=feature_names)
+    try:
+        input_scaled = scaler.transform(input_df)  # scale input
+        prediction = model.predict(input_scaled)[0]
+        prob = model.predict_proba(input_scaled)[0][1] * 100
 
-    # Scale
-    input_scaled = scaler.transform(input_df)
-
-    # Predict
-    prediction = model.predict(input_scaled)[0]
-    prob = model.predict_proba(input_scaled)[0][1] * 100
-
-    if prediction == 1:
-        st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
-    else:
-        st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
-
+        if prediction == 1:
+            st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
+        else:
+            st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
+    except Exception as e:
+        st.error(f"Error: {e}")
 
