@@ -1,14 +1,12 @@
 import streamlit as st
-import joblib
 import numpy as np
-import pandas as pd
 from sklearn.preprocessing import StandardScaler
+import joblib
+import pandas as pd
 
-# Load saved Random Forest model and scaler
+# Load saved model and scaler
 model = joblib.load("heart_rf_model_streamlit.pkl")
 scaler = joblib.load("heart_scaler.pkl")
-
-st.set_page_config(page_title="Heart Disease Risk Predictor", page_icon="❤️")
 
 st.title("❤️ Heart Disease Prediction App")
 st.write("🏥 Enter patient medical details to predict heart disease risk")
@@ -28,31 +26,39 @@ slope = st.number_input("Slope (0-2)", min_value=0, max_value=2, value=1)
 ca = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=0)
 thal = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
 
+# Feature names used during training
+feature_names = ['age','sex','cp','trestbps','chol','fbs','restecg',
+                 'thalach','exang','oldpeak','slope','ca','thal']
+
 if st.button("🔮 Predict Heart Disease"):
-    # Prepare input
-    input_data = np.array([[age, sex, cp, trestbps, chol, fbs, restecg,
-                            thalach, exang, oldpeak, slope, ca, thal]])
-    
-    # Scale input
-    input_scaled = scaler.transform(input_data)
-    
+    # تحويل القيم لـ DataFrame بنفس ترتيب الـ features
+    input_dict = {
+        'age': age,
+        'sex': sex,
+        'cp': cp,
+        'trestbps': trestbps,
+        'chol': chol,
+        'fbs': fbs,
+        'restecg': restecg,
+        'thalach': thalach,
+        'exang': exang,
+        'oldpeak': oldpeak,
+        'slope': slope,
+        'ca': ca,
+        'thal': thal
+    }
+    input_df = pd.DataFrame([input_dict], columns=feature_names)
+
+    # Scale
+    input_scaled = scaler.transform(input_df)
+
     # Predict
     prediction = model.predict(input_scaled)[0]
-    
-    # Get probability (if classifier supports predict_proba)
-    try:
-        prob = model.predict_proba(input_scaled)[0][1] * 100
-    except:
-        prob = None
+    prob = model.predict_proba(input_scaled)[0][1] * 100
 
     if prediction == 1:
-        if prob:
-            st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
-        else:
-            st.error(f"💔 High Risk of Heart Disease")
+        st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
     else:
-        if prob:
-            st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
-        else:
-            st.success(f"❤️ Low Risk of Heart Disease")
+        st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
+
 
