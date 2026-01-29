@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-# Load saved model and scaler
-saved_data = joblib.load("heart_rf_model.pkl")  # بدل pickle
-model = saved_data["model"]
-scaler = saved_data["scaler"]
-features = saved_data["features"]
+# Load saved Random Forest model and scaler
+model = joblib.load("heart_rf_model.pkl")
+scaler = joblib.load("heart_scaler.pkl")
+
+st.set_page_config(page_title="Heart Disease Risk Predictor", page_icon="❤️")
 
 st.title("❤️ Heart Disease Prediction App")
 st.write("🏥 Enter patient medical details to predict heart disease risk")
@@ -29,17 +29,30 @@ ca = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=
 thal = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
 
 if st.button("🔮 Predict Heart Disease"):
+    # Prepare input
     input_data = np.array([[age, sex, cp, trestbps, chol, fbs, restecg,
                             thalach, exang, oldpeak, slope, ca, thal]])
-
-    # Scaling
+    
+    # Scale input
     input_scaled = scaler.transform(input_data)
-
+    
     # Predict
     prediction = model.predict(input_scaled)[0]
-    prob = model.predict_proba(input_scaled)[0][1] * 100
+    
+    # Get probability (if classifier supports predict_proba)
+    try:
+        prob = model.predict_proba(input_scaled)[0][1] * 100
+    except:
+        prob = None
 
     if prediction == 1:
-        st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
+        if prob:
+            st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
+        else:
+            st.error(f"💔 High Risk of Heart Disease")
     else:
-        st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
+        if prob:
+            st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
+        else:
+            st.success(f"❤️ Low Risk of Heart Disease")
+
