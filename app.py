@@ -16,7 +16,7 @@ st.write("🏥 Enter patient medical details to predict heart disease risk")
 # Input fields
 age = st.number_input("Age", min_value=1, max_value=120, value=40)
 sex = st.selectbox("Sex (Male=1, Female=0)", [0,1], index=1)
-cp = st.selectbox("Chest Pain Type", ["typical angina","atypical angina","non-anginal","asymptomatic"], index=0)
+cp = st.number_input("Chest Pain Type (0-3)", min_value=0, max_value=3, value=0)
 trestbps = st.number_input("Resting BP", min_value=80, max_value=200, value=120)
 chol = st.number_input("Cholesterol", min_value=100, max_value=600, value=200)
 fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0,1], index=0)
@@ -26,7 +26,8 @@ exang = st.selectbox("Exercise Induced Angina", [0,1], index=0)
 oldpeak = st.number_input("ST Depression", min_value=0.0, max_value=10.0, value=0.0, step=0.1)
 slope = st.number_input("Slope (0-2)", min_value=0, max_value=2, value=1)
 ca = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=0)
-thal = st.selectbox("Thal", ["normal","fixed","reversible"], index=0)
+#thal = st.selectbox("Thal", ["normal","fixed","reversible"], index=0)
+thal = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
 
 if st.button("🔮 Predict Heart Disease"):
 
