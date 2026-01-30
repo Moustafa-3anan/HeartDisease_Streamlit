@@ -5,7 +5,7 @@ import joblib
 import pandas as pd
 
 # Load saved model and scaler
-model = joblib.load("heart_rf_model_streamlit.pkl")
+model = joblib.load("heart_rf_model_streamlit (1).pkl")
 scaler = joblib.load("heart_scaler.pkl")
 
 st.title("❤️ Heart Disease Prediction App")
