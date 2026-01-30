@@ -5,7 +5,7 @@ import joblib
 import pandas as pd
 
 # Load everything (model, scaler, features)
-data = joblib.load("heart_rf_model_stream.pkl")
+data = joblib.load("heart_rf_model_streamlit.pkl")
 model = data["model"]
 scaler = data["scaler"]
 features = data["features"]
