@@ -26,8 +26,7 @@ exang = st.selectbox("Exercise Induced Angina", [0,1], index=0)
 oldpeak = st.number_input("ST Depression", min_value=0.0, max_value=10.0, value=0.0, step=0.1)
 slope = st.number_input("Slope (0-2)", min_value=0, max_value=2, value=1)
 ca = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=0)
-#thal = st.selectbox("Thal", ["normal","fixed","reversible"], index=0)
-thal = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
+thal = st.selectbox("Thal", ["normal","fixed","reversible"], index=0)
 
 if st.button("🔮 Predict Heart Disease"):
 
