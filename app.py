@@ -4,17 +4,19 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import pandas as pd
 
-# Load saved model and scaler
-model = joblib.load("heart_rf_model_streamlit.pkl")
-scaler = joblib.load("heart_scaler.pkl")
+# Load everything (model, scaler, features)
+data = joblib.load("heart_rf_model_stream.pkl")
+model = data["model"]
+scaler = data["scaler"]
+features = data["features"]
 
 st.title("❤️ Heart Disease Prediction App")
 st.write("🏥 Enter patient medical details to predict heart disease risk")
 
 # Input fields
 age = st.number_input("Age", min_value=1, max_value=120, value=40)
-sex = st.selectbox("Sex (1=Male, 0=Female)", [0,1], index=1)
-cp = st.number_input("Chest Pain Type (0-3)", min_value=0, max_value=3, value=0)
+sex = st.selectbox("Sex (Male=1, Female=0)", [0,1], index=1)
+cp = st.selectbox("Chest Pain Type", ["typical angina","atypical angina","non-anginal","asymptomatic"], index=0)
 trestbps = st.number_input("Resting BP", min_value=80, max_value=200, value=120)
 chol = st.number_input("Cholesterol", min_value=100, max_value=600, value=200)
 fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0,1], index=0)
@@ -24,26 +26,40 @@ exang = st.selectbox("Exercise Induced Angina", [0,1], index=0)
 oldpeak = st.number_input("ST Depression", min_value=0.0, max_value=10.0, value=0.0, step=0.1)
 slope = st.number_input("Slope (0-2)", min_value=0, max_value=2, value=1)
 ca = st.number_input("Number of Vessels (0-3)", min_value=0, max_value=3, value=0)
-thal = st.number_input("Thal (1=normal)", min_value=0, max_value=3, value=1)
-
-# **Important**: Feature names and order must match training
-feature_order = ['age','sex','cp','trestbps','chol','fbs','restecg',
-                 'thalach','exang','oldpeak','slope','ca','thal']
-
-input_values = [age, sex, cp, trestbps, chol, fbs, restecg,
-                thalach, exang, oldpeak, slope, ca, thal]
-
-input_df = pd.DataFrame([input_values], columns=feature_order)
+thal = st.selectbox("Thal", ["normal","fixed","reversible"], index=0)
 
 if st.button("🔮 Predict Heart Disease"):
-    try:
-        input_scaled = scaler.transform(input_df)  # scale input
-        prediction = model.predict(input_scaled)[0]
-        prob = model.predict_proba(input_scaled)[0][1] * 100
 
-        if prediction == 1:
-            st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
-        else:
-            st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
-    except Exception as e:
-        st.error(f"Error: {e}")
+    # Prepare user input
+    user_input = pd.DataFrame([{
+        "age": age,
+        "sex": sex,
+        "cp": cp,
+        "trestbps": trestbps,
+        "chol": chol,
+        "fbs": fbs,
+        "restecg": restecg,
+        "thalach": thalach,
+        "exang": exang,
+        "oldpeak": oldpeak,
+        "slope": slope,
+        "ca": ca,
+        "thal": thal
+    }])
+
+    # Apply get_dummies to match training
+    user_encoded = pd.get_dummies(user_input)
+    user_encoded = user_encoded.reindex(columns=features, fill_value=0)
+
+    # Scale numerical features
+    user_scaled = scaler.transform(user_encoded)
+
+    # Predict
+    prediction = model.predict(user_scaled)[0]
+    prob = model.predict_proba(user_scaled)[0][1] * 100
+
+    if prediction == 1:
+        st.error(f"💔 High Risk of Heart Disease ({prob:.2f}%)")
+    else:
+        st.success(f"❤️ Low Risk of Heart Disease ({prob:.2f}%)")
+
