@@ -10,7 +10,7 @@ model = data["model"]
 scaler = data["scaler"]
 features = data["features"]
 
-st.title("❤️ Heart Disease Prediction App")
+st.title("🫀 Heart Disease Prediction App")
 st.write("🏥 Enter patient medical details to predict heart disease risk")
 
 # Input fields
